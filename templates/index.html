@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static',filename='style.css') }}">
+    <title>Camera View</title>
+
+</head>
+<html>
+<div>
+    <a class="card-text" href="#">
+        <img id="bg" class="camera" src="{{ url_for('video_feed') }}">
+    </a>
+</div>
+</html>
