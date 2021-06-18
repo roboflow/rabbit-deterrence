@@ -8,12 +8,17 @@ import pygame as pg
 from PIL.Image import Image
 
 from config import *
+from threading import Thread
 
 
 class Camera:
     def __init__(self, source):
         # Video capture
         self.video = cv2.VideoCapture(source)
+        self.soundFile = os.getcwd() + os.sep + 'crying.mp3'
+        self.soundCondition = False
+        pg.mixer.init()
+        pg.mixer.music.load(self.soundFile)
 
     def getRawFrame(self):
         # Returns the raw frame
@@ -21,7 +26,7 @@ class Camera:
         return frameToReturn
 
     # Frame with annotations
-    def getFrame(self):
+    def getFrameAnnotations(self):
         success, img = self.video.read()
         # Resize (while maintaining the aspect ratio) to improve speed and save bandwidth
         height, width, channels = img.shape
@@ -37,34 +42,38 @@ class Camera:
             "Content-Type": "application/x-www-form-urlencoded"
         }, stream=True).json()['predictions']
 
-        # if len(resp) > 0:
-        #     success = False
-        #     # Prevent Blurry Images from being uploaded
-        #     if cv2.Laplacian(img, cv2.CV_64F).var() > 40:
-        #         success, imageId = self.uploadImage(img)
-        #     self.playSound(os.getcwd() + os.sep + 'crying.mp3')
-        #
-        #     if success:
-        #         self.uploadAnnotation(imageId, resp)
-        #
+        if len(resp) > 0:
+            success = False
+            # Prevent Blurry Images from being uploaded
+            # if cv2.Laplacian(img, cv2.CV_64F).var() > 40:
+            #     success, imageId = self.uploadImage(img)
+
+            # if success:
+            #     self.uploadAnnotation(imageId, resp)
+
         # Draw all predictions
         for prediction in resp:
             self.writeOnStream(prediction['x'], prediction['y'], prediction['width'], prediction['height'],
                                prediction['class'],
                                img)
 
+        return len(resp) > 0, img
+
+    def getFrame(self):
+        sound, img = self.getFrameAnnotations()
+        if not self.soundCondition and sound:
+            thread = Thread(target=self.playSound)
+            thread.start()
+            self.soundCondition = True
+
         return img
 
-    def playSound(self, soundFile):
+    def playSound(self):
         '''
         stream music with mixer.music module in blocking manner
         this will stream the sound from disk while playing
         '''
         clock = pg.time.Clock()
-        pg.mixer.init()
-        pg.mixer.music.load(soundFile)
-        print("Music file {} loaded!".format(soundFile))
-
         pg.mixer.music.play()
 
         while pg.mixer.music.get_busy():
