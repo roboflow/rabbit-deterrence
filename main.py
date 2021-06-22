@@ -1,7 +1,8 @@
+import os
 import sys
+
 from Camera import Camera
 import cv2
-import os
 
 from flask import Response, Flask, render_template
 
@@ -23,6 +24,9 @@ def gen(camera):
             yield (b'--frame\r\n'
                    b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n\r\n')
         except Exception as e:
+            exceptionType, exceptionObject, exceptionThrowback = sys.exc_info()
+            fileName = os.path.split(exceptionThrowback.tb_frame.f_code.co_filename)[1]
+            print(exceptionType, fileName, exceptionThrowback.tb_lineno)
             print(e)
 
 

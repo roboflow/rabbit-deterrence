@@ -5,7 +5,7 @@ import os
 import cv2
 import requests
 import pygame as pg
-from PIL.Image import Image
+from PIL import Image
 
 from config import *
 from threading import Thread
@@ -32,7 +32,7 @@ class Camera:
         height, width, channels = img.shape
         scale = ROBOFLOW_SIZE / max(height, width)
         img = cv2.resize(img, (round(scale * width), round(scale * height)))
-        #
+
         # Encode image to base64 string
         retval, buffer = cv2.imencode('.jpg', img)
         img_str = base64.b64encode(buffer)
@@ -45,11 +45,11 @@ class Camera:
         if len(resp) > 0:
             success = False
             # Prevent Blurry Images from being uploaded
-            # if cv2.Laplacian(img, cv2.CV_64F).var() > 40:
-            #     success, imageId = self.uploadImage(img)
+            if cv2.Laplacian(img, cv2.CV_64F).var() > 40:
+                success, imageId = self.uploadImage(img)
 
-            # if success:
-            #     self.uploadAnnotation(imageId, resp)
+            if success:
+                self.uploadAnnotation(imageId, resp)
 
         # Draw all predictions
         for prediction in resp:
@@ -78,6 +78,7 @@ class Camera:
 
         while pg.mixer.music.get_busy():
             clock.tick(30)
+        self.soundCondition = False
 
     def uploadImage(self, frame):
         frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
@@ -141,7 +142,7 @@ class Camera:
         r = requests.post(annotation_upload_url, data=annotationStr, headers={
             "Content-Type": "text/plain"
         })
-
+        print(r.json())
         return r.json()['success']
 
     def writeOnStream(self, x, y, width, height, className, frame):
@@ -157,3 +158,18 @@ class Camera:
         font = cv2.FONT_HERSHEY_DUPLEX
 
         cv2.putText(frame, className, (int(x - width / 2 + 6), int(y + height / 2 + 26)), font, 0.5, (255, 255, 255), 1)
+
+
+if __name__ == '__main__':
+    camera = Camera(source=0)
+    image = cv2.imread('C:\\Users\\Owner\\Documents\\rabbit-deterrence\\Eastern-Cottontail.jpg')
+    success, id = camera.uploadImage(image)
+    api = [{
+        "x": 463,
+        "y": 395.5,
+        "width": 834,
+        "height": 753,
+        "class": "Rabbits",
+        "confidence": 0.916
+    }]
+    camera.uploadAnnotation(id, api)
