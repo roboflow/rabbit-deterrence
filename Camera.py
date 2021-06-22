@@ -10,6 +10,8 @@ from PIL import Image
 from config import *
 from threading import Thread
 
+import copy
+
 
 class Camera:
     def __init__(self, source):
@@ -17,6 +19,7 @@ class Camera:
         self.video = cv2.VideoCapture(source)
         self.soundFile = os.getcwd() + os.sep + 'crying.mp3'
         self.soundCondition = False
+        self.uploadCondition = False
         pg.mixer.init()
         pg.mixer.music.load(self.soundFile)
 
@@ -44,29 +47,44 @@ class Camera:
 
         if len(resp) > 0:
             success = False
-            # Prevent Blurry Images from being uploaded
-            if cv2.Laplacian(img, cv2.CV_64F).var() > 40:
-                success, imageId = self.uploadImage(img)
-
-            if success:
-                self.uploadAnnotation(imageId, resp)
-
+            # # Prevent Blurry Images from being uploaded
+            # if cv2.Laplacian(img, cv2.CV_64F).var() > 400:
+            #     success, imageId = self.uploadImage(img)
+            #
+            # if success:
+            #     self.uploadAnnotation(imageId, resp)
+        rawImg = copy.deepcopy(img)
         # Draw all predictions
         for prediction in resp:
             self.writeOnStream(prediction['x'], prediction['y'], prediction['width'], prediction['height'],
                                prediction['class'],
                                img)
 
-        return len(resp) > 0, img
+        return len(resp) > 0, img, rawImg, resp
 
     def getFrame(self):
-        sound, img = self.getFrameAnnotations()
+        sound, img, rawImg, apiResponse = self.getFrameAnnotations()
+        # Multithread sound
         if not self.soundCondition and sound:
-            thread = Thread(target=self.playSound)
-            thread.start()
             self.soundCondition = True
+            soundThread = Thread(target=self.playSound)
+            soundThread.start()
+
+        # Multithread Active Learning
+        if not self.uploadCondition and sound:
+            if cv2.Laplacian(rawImg, cv2.CV_64F).var() > 800:
+                self.uploadCondition = True
+                uploadThread = Thread(target=self.activeLearning, args=[rawImg, apiResponse])
+                uploadThread.start()
 
         return img
+
+    def activeLearning(self, image, apiResponse):
+        success, imageId = self.uploadImage(image)
+        if success:
+            self.uploadAnnotation(imageId, apiResponse)
+
+        self.uploadCondition = False
 
     def playSound(self):
         '''
@@ -102,7 +120,6 @@ class Camera:
         r = requests.post(image_upload_url, data=img_str, headers={
             "Content-Type": "application/x-www-form-urlencoded"
         })
-        print(r.json())
         return r.json()['success'], r.json()['id']
 
     def uploadAnnotation(self, imageId, apiResponse):
@@ -142,8 +159,8 @@ class Camera:
         r = requests.post(annotation_upload_url, data=annotationStr, headers={
             "Content-Type": "text/plain"
         })
-        print(r.json())
-        return r.json()['success']
+        # return r.json()['success']
+        return True
 
     def writeOnStream(self, x, y, width, height, className, frame):
         # Draw a Rectangle around detected image
