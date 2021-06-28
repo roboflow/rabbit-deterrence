@@ -49,7 +49,7 @@ class Camera:
         # Draw all predictions
         respCount = 0
         for prediction in resp:
-            if prediction["confidence"] > 0.4:
+            if prediction["confidence"] > CONFIDENCE_THRESHOLD:
                 respCount += 1
                 self.writeOnStream(prediction['x'], prediction['y'], prediction['width'], prediction['height'],
                                    prediction['class'],
@@ -68,7 +68,7 @@ class Camera:
         # Multithread Active Learning
         if not self.uploadCondition and sound:
             # Do not add blurry images to dataset
-            if cv2.Laplacian(rawImg, cv2.CV_64F).var() > 300:
+            if cv2.Laplacian(rawImg, cv2.CV_64F).var() > LAPLACIAN_THRESHOLD:
                 self.uploadCondition = True
                 uploadThread = Thread(target=self.activeLearning, args=[rawImg, apiResponse])
                 uploadThread.start()
@@ -105,14 +105,6 @@ class Camera:
         img_str = base64.b64encode(buffered.getvalue())
         img_str = img_str.decode("ascii")
 
-        # Construct the URL
-        image_upload_url = "".join([
-            "https://api.roboflow.com/dataset/", DATASET_NAME, "/upload",
-            "?api_key=", ROBOFLOW_API_KEY,
-            "&name=rabbit.jpg",
-            "&split=train"
-        ])
-
         r = requests.post(image_upload_url, data=img_str, headers={
             "Content-Type": "application/x-www-form-urlencoded"
         })
@@ -123,6 +115,8 @@ class Camera:
         data = []
         annotations = []
         for prediction in apiResponse:
+            if prediction["confidence"] < CONFIDENCE_THRESHOLD:
+                continue
             annotations.append({"label": prediction['class'],
                                 "coordinates": {
                                     "x": prediction['x'],

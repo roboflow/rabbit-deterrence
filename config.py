@@ -8,21 +8,29 @@ with open('roboflow_config.json') as f:
     ROBOFLOW_SIZE = config["ROBOFLOW_SIZE"]
     LOCAL_SERVER = config["LOCAL_SERVER"]
     DATASET_NAME = config["DATASET_NAME"]
+    LAPLACIAN_THRESHOLD = config["LAPLACIAN_THRESHOLD"]
+    CONFIDENCE_THRESHOLD = config["CONFIDENCE_THRESHOLD"]
 
     FRAMERATE = config["FRAMERATE"]
     BUFFER = config["BUFFER"]
 
-# Local Server Link
-infer_url = "".join([
-    "https://detect.roboflow.com/" + ROBOFLOW_MODEL,
-    "?api_key=" + ROBOFLOW_API_KEY,
-    "&name=YOUR_IMAGE.jpg"
-])
 if not LOCAL_SERVER:
-    pass
+    infer_url = "".join([
+        "https://detect.roboflow.com/" + ROBOFLOW_MODEL,
+        "?api_key=" + ROBOFLOW_API_KEY,
+        "&name=YOUR_IMAGE.jpg"
+    ])
 else:
     infer_url = "".join([
         "http://127.0.0.1:9001/" + ROBOFLOW_MODEL,
         "?api_key=" + ROBOFLOW_API_KEY,
         "&name=YOUR_IMAGE.jpg"
     ])
+
+# Construct the URL
+image_upload_url = "".join([
+    "https://api.roboflow.com/dataset/", DATASET_NAME, "/upload",
+    "?api_key=", ROBOFLOW_API_KEY,
+    "&name=rabbit.jpg",
+    "&split=train"
+])

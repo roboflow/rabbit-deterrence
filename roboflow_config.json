@@ -5,8 +5,6 @@
   "ROBOFLOW_SIZE": 416,
   "DATASET_NAME": "your-dataset",
   "LOCAL_SERVER": false,
-
-  "__comment2": "The following are only needed for infer-async.py",
-  "FRAMERATE": 24,
-  "BUFFER": 0.5
+  "LAPLACIAN_THRESHOLD": 300,
+  "CONFIDENCE_THRESHOLD": 0.4
 }
