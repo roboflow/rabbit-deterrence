@@ -45,22 +45,17 @@ class Camera:
             "Content-Type": "application/x-www-form-urlencoded"
         }, stream=True).json()['predictions']
 
-        if len(resp) > 0:
-            success = False
-            # # Prevent Blurry Images from being uploaded
-            # if cv2.Laplacian(img, cv2.CV_64F).var() > 400:
-            #     success, imageId = self.uploadImage(img)
-            #
-            # if success:
-            #     self.uploadAnnotation(imageId, resp)
         rawImg = copy.deepcopy(img)
         # Draw all predictions
+        respCount = 0
         for prediction in resp:
-            self.writeOnStream(prediction['x'], prediction['y'], prediction['width'], prediction['height'],
-                               prediction['class'],
-                               img)
+            if prediction["confidence"] > 0.4:
+                respCount += 1
+                self.writeOnStream(prediction['x'], prediction['y'], prediction['width'], prediction['height'],
+                                   prediction['class'],
+                                   img)
 
-        return len(resp) > 0, img, rawImg, resp
+        return respCount > 0, img, rawImg, resp
 
     def getFrame(self):
         sound, img, rawImg, apiResponse = self.getFrameAnnotations()
@@ -72,7 +67,8 @@ class Camera:
 
         # Multithread Active Learning
         if not self.uploadCondition and sound:
-            if cv2.Laplacian(rawImg, cv2.CV_64F).var() > 800:
+            # Do not add blurry images to dataset
+            if cv2.Laplacian(rawImg, cv2.CV_64F).var() > 300:
                 self.uploadCondition = True
                 uploadThread = Thread(target=self.activeLearning, args=[rawImg, apiResponse])
                 uploadThread.start()
