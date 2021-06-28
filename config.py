@@ -1,6 +1,6 @@
 import json
 
-with open('personal_config.json') as f:
+with open('roboflow_config.json') as f:
     config = json.load(f)
 
     ROBOFLOW_API_KEY = config["ROBOFLOW_API_KEY"]

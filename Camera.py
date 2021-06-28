@@ -175,18 +175,3 @@ class Camera:
         font = cv2.FONT_HERSHEY_DUPLEX
 
         cv2.putText(frame, className, (int(x - width / 2 + 6), int(y + height / 2 + 26)), font, 0.5, (255, 255, 255), 1)
-
-
-if __name__ == '__main__':
-    camera = Camera(source=0)
-    image = cv2.imread('C:\\Users\\Owner\\Documents\\rabbit-deterrence\\Eastern-Cottontail.jpg')
-    success, id = camera.uploadImage(image)
-    api = [{
-        "x": 463,
-        "y": 395.5,
-        "width": 834,
-        "height": 753,
-        "class": "Rabbits",
-        "confidence": 0.916
-    }]
-    camera.uploadAnnotation(id, api)
