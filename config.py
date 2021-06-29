@@ -11,9 +11,6 @@ with open('roboflow_config.json') as f:
     LAPLACIAN_THRESHOLD = config["LAPLACIAN_THRESHOLD"]
     CONFIDENCE_THRESHOLD = config["CONFIDENCE_THRESHOLD"]
 
-    FRAMERATE = config["FRAMERATE"]
-    BUFFER = config["BUFFER"]
-
 if not LOCAL_SERVER:
     infer_url = "".join([
         "https://detect.roboflow.com/" + ROBOFLOW_MODEL,
