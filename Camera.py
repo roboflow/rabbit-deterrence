@@ -17,7 +17,7 @@ class Camera:
     def __init__(self, source):
         # Video capture
         self.video = cv2.VideoCapture(source)
-        self.soundFile = os.getcwd() + os.sep + 'crying.mp3'
+        self.soundFile = os.getcwd() + os.sep + 'car-honk.mp3'
         self.soundCondition = False
         self.uploadCondition = False
         pg.mixer.init()
@@ -31,6 +31,8 @@ class Camera:
     # Frame with annotations
     def getFrameAnnotations(self):
         success, img = self.video.read()
+        # Rotate Camera Upside down if needed
+        # img = cv2.rotate(img, cv2.ROTATE_180)
         # Resize (while maintaining the aspect ratio) to improve speed and save bandwidth
         height, width, channels = img.shape
         scale = ROBOFLOW_SIZE / max(height, width)
